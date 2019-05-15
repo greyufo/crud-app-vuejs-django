@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Quasar | Django | Crud App</title>
+    <meta name="keywords" content="quasar, django, crudapp, restapi">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A simple crud app made with the quasar and django">
+
+    <meta name="keywords" content="vuejs, django, crudapp, restapi">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@quasar/extras/material-icons/material-icons.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/quasar/dist/quasar.min.css">
+
+  </head>
+
+  <div id="q-app">
+       
+        <div class="q-ma-xl">
+                <div class="row">
+                  <div class="text-h4">
+                    List of Articles
+                  </div>
+                  <div class="q-gutter-y-md">                      
+                   <q-btn  v-on:click="dialog = true" color="primary" icon="add" label="ADD ARTICLE" class="q-ma-md"></q-btn>
+                  </div>
+                </div>
+                <div class="row">
+                        <q-input 
+                            v-model ="search_term" 
+                            placeholder="Search string"
+                            style="width: 300px">
+                        </q-input>
+                        <q-btn  
+                            v-on:click.prevent="getArticles()"
+                            color="secondary" 
+                            icon="search" 
+                            label="Search" 
+                            class="q-ma-md">
+                        </q-btn>
+                </div>
+                <div class="row">
+                <q-table   
+                  style="width:100%;"                   
+                  :data="articles"
+                  :columns="columns"
+                  row-key="name"
+                >         
+                
+                <q-td  slot="body-cell-action" slot-scope="props" :props="props">                    
+                    <q-btn color="green" label="Edit" @click="getArticle(props.row.article_id)"></q-btn> 
+                    <q-btn color="red" label="Delete" @click="deleteArticle(props.row.article_id)"> </q-btn>
+                </q-td>         
+              
+                </q-table>
+                </div>
+         </div>           
+         <q-dialog v-model="dialog" >
+              
+                <q-card style="width: 700px; max-width: 80vw;">                    
+                    <q-card-section>
+                      <div class="text-h6">ADD ARTICLE</div>
+                    </q-card-section>                  
+                    <q-card-section>
+                            <q-input                                                       
+                            placeholder="Enter Article Heading"
+                            v-model="currentArticle.article_heading"
+                            required="required"                                            
+                          />
+                          </q-card-section>
+                          <q-card-section>                          
+                            <q-input
+                            type="textarea" 
+                            row="3"                                                                         
+                            placeholder="Enter Article Body"
+                            v-model="currentArticle.article_body"
+                            required="required"                                                                     
+                          />
+                          </q-card-section>
+                   
+                     <q-card-actions align=right>
+                         <q-btn flat color="primary" label="Close"></q-btn>                                     
+                         <q-btn color="secondary" label="Save changes"></q-btn>                    
+                     </q-card-actions> 
+                </q-card>
+            
+        </q-dialog>
+
+    </div>
+
+     
+  <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+  <script src="https://cdn.jsdelivr.net/npm/quasar/dist/quasar.umd.min.js"></script>  
+  <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.3.5"></script>
+  <script type="text/javascript">
+  Vue.http.headers.common['X-CSRFToken'] = "{{ csrf_token }}";
+      new Vue({
+  el: '#q-app',
+  data: function () {
+    return {
+        articles: [],
+        loading: true,
+        search_term: '',
+        currentArticle: {},
+        dialog:false,
+        columns: [
+        { name: 'id', align: 'center', label: '#', field: 'article_id', sortable: false },
+        { name: 'heading', align: 'center', label: 'heading', field: 'article_heading', sortable: false },
+        { name: 'body', align: 'center', label: 'body', field: 'article_body', sortable: false },
+        { name: 'action',align: 'center', label: 'Action'}
+        ]
+    }    
+  },
+  mounted: function() {
+        this.getArticles();
+  },
+  methods: {
+    edit (props)
+    {
+      console.log(props.row.article_id);
+    },
+    getArticles: function() {
+          let api_url = '/api/article/';
+          if(this.search_term!==''||this.search_term!==null) {
+            api_url = `/api/article/?search=${this.search_term}`
+          }
+          this.loading = true;
+          this.$http.get(api_url)
+              .then((response) => {
+                this.articles = response.data;
+                this.loading = false;
+              })
+              .catch((err) => {
+                this.loading = false;
+                console.log(err);
+              })
+        },
+        getArticle: function(id) {
+          this.loading = true;
+          this.$http.get(`/api/article/${id}/`)
+              .then((response) => {
+                this.currentArticle = response.data;
+                this.dialog = true;
+                this.loading = false;
+              })
+              .catch((err) => {
+                this.loading = false;
+                console.log(err);
+              })
+        },
+        deleteArticle: function(id) {
+          this.loading = true;
+          this.$http.delete(`/api/article/${id}/`)
+              .then((response) => {
+                this.loading = false;
+                this.getArticles();
+              })
+              .catch((err) => {
+                this.loading = false;
+                console.log(err);
+              })
+        
+      },
+  	notify: function () {
+      this.$q.notify('Running on Quasar v' + this.$q.version)
+    }
+	}
+});
+  </script>
+  </body>
+</html>
